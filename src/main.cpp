@@ -1,6 +1,5 @@
 #include "cmd_options.h"
 #include "crypto_guard_ctx.h"
-#include "program_options.h"
 #include <algorithm>
 #include <array>
 #include <iostream>
@@ -36,27 +35,13 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password) {
 
 int main(int argc, char *argv[]) {
     try {
-        if (auto args = ParseCommandLine(argc, argv)) {
-            //std::ofstream out{args->destination, std::ios_base::binary};
-            //if (!out) {
-            //    throw std::runtime_error{"Failed to open "s + args->destination + " for writing."s};
-            //}
-            //for (const std::string& name : args->source) {
-            //    std::ifstream in{name, std::ios_base::binary};
-            //    if (!in) {
-            //        throw std::runtime_error{"Failed to open "s + name + " for reading."s};
-            //    }
-            //    if (!(out << in.rdbuf())) {
-            //        throw std::runtime_error{"Writing error"};
-            //    }
-            //}
-        }
+        CryptoGuard::ProgramOptions programOptions(argc, argv);
+        
         return EXIT_SUCCESS;
     } catch (const std::exception& e) {
         std::cout << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-
     try {
         //
         // OpenSSL пример использования:
@@ -103,7 +88,7 @@ int main(int argc, char *argv[]) {
         // Конец примера
         //
 
-        CryptoGuard::ProgramOptions options;
+        CryptoGuard::ProgramOptions options(argc, argv);
 
         CryptoGuard::CryptoGuardCtx cryptoCtx;
 

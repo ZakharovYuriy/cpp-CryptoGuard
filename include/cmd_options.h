@@ -8,7 +8,7 @@ namespace CryptoGuard {
 
 class ProgramOptions {
 public:
-    ProgramOptions();
+    ProgramOptions(int argc, const char* const argv[]);
     ~ProgramOptions();
 
     enum class COMMAND_TYPE {
@@ -17,12 +17,13 @@ public:
         CHECKSUM,
     };
 
-    void Parse(int argc, char *argv[]);
-
     COMMAND_TYPE GetCommand() const { return command_; }
     std::string GetInputFile() const { return inputFile_; }
     std::string GetOutputFile() const { return outputFile_; }
     std::string GetPassword() const { return password_; }
+
+private:
+    COMMAND_TYPE parseCommand(const std::string& str);
 
 private:
     COMMAND_TYPE command_;
