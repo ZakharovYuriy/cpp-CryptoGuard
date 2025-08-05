@@ -4,6 +4,7 @@
 
 #include <boost/program_options.hpp>
 
+namespace{
 const char* programName = "./programName";
 const char* helpOpt = "--help";
 const char* commandOpt = "--command";
@@ -20,6 +21,7 @@ const char* commandChecksum = "checksum";
 const char* wrongCommand = "wrongCommand";
 
 const char* defaultOutputFilePtah = "./result.txt";
+}
 
 TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing) 
 {
@@ -28,6 +30,10 @@ TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing)
     // no options passed at all → should throw due to missing required options
     const char* noOptions[] = {programName};
     EXPECT_ANY_THROW(ProgramOptions programOptions(1,noOptions)); 
+
+    // Check that creating ProgramOptions with only the help option does not throw an exception
+    const char* onlyHelpOption[] = {programName,helpOpt};
+    EXPECT_NO_THROW(ProgramOptions programOptions(2,onlyHelpOption)); 
 
     // all required options including output explicitly provided → should not throw
     const char* allOutputOption[] = {programName,commandOpt,commandEncrypt,inputOpt,inputFileName,outputOpt,outputFileName,passwordOpt,password};

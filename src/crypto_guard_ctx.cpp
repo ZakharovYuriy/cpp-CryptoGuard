@@ -1,8 +1,10 @@
 #include "crypto_guard_ctx.h"
 
 #include <array>
-#include <vector>
+#include <iomanip>
 #include <iostream>
+#include <sstream> 
+#include <vector>
 
 #include <openssl/evp.h>
 
@@ -29,7 +31,7 @@ public:
     ~PImpl();
     void EncryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password);
     void DecryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password);
-    std::string CalculateChecksum(std::istream &inStream);
+    [[nodiscard]] std::string CalculateChecksum(std::istream &inStream);
 
 private:
 
@@ -37,18 +39,25 @@ AesCipherParams CreateChiperParamsFromPassword(std::string_view password);
 void ApplyCryptoOperation(std::istream &inStream, std::ostream &outStream, const AesCipherParams& params);
 
 private:
-EVP_CIPHER_CTX * ctx_;
+EVP_CIPHER_CTX * chiper_ctx_;
+EVP_MD_CTX * md_ctx_;
 };
 
-CryptoGuardCtx::PImpl::PImpl():ctx_(EVP_CIPHER_CTX_new()){
-    if (!ctx_) {
+CryptoGuardCtx::PImpl::PImpl():
+    chiper_ctx_(EVP_CIPHER_CTX_new()),
+    md_ctx_(EVP_MD_CTX_new())
+{
+    if (!chiper_ctx_) {
         throw std::runtime_error("Failed to create EVP_CIPHER_CTX");
+    }
+    if (!md_ctx_) {
+        throw std::runtime_error("Failed to create EVP_MD_CTX");
     }
 };
 
 CryptoGuardCtx::PImpl::~PImpl()
 {
-    EVP_CIPHER_CTX_free(ctx_);
+    EVP_CIPHER_CTX_free(chiper_ctx_);
 }
 
 void CryptoGuardCtx::PImpl::EncryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) 
@@ -66,8 +75,47 @@ void CryptoGuardCtx::PImpl::DecryptFile(std::istream &inStream, std::ostream &ou
 }
 
 std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream) 
-{ 
-    return "NOT_IMPLEMENTED"; 
+{
+    if (!EVP_DigestInit_ex(md_ctx_, EVP_sha256(), nullptr)) {
+        EVP_MD_CTX_free(md_ctx_);
+        throw std::runtime_error("EVP_DigestInit_ex failed");
+    }
+
+    const std::size_t BUF_SIZE = 4096;
+    std::vector<unsigned char> inBuf(BUF_SIZE);
+
+    while (inStream) {
+        inStream.read(reinterpret_cast<char*>(inBuf.data()), BUF_SIZE);
+        std::streamsize bytesRead = inStream.gcount();
+        if (inStream.bad()) throw std::runtime_error("Stream read error (badbit set)");
+
+        if (bytesRead <= 0) break;
+
+        if (!EVP_DigestUpdate(md_ctx_, inBuf.data(), static_cast<int>(bytesRead)))
+        {
+            EVP_MD_CTX_free(md_ctx_);
+            throw std::runtime_error("EVP_DigestUpdate failed");
+        }
+    }
+
+    unsigned char hash[EVP_MAX_MD_SIZE];
+    unsigned int hashLen = 0;
+
+    if (!EVP_DigestFinal_ex(md_ctx_, hash, &hashLen)) {
+        EVP_MD_CTX_free(md_ctx_);
+        throw std::runtime_error("EVP_DigestFinal_ex failed");
+    }
+
+    std::ostringstream oss;
+    oss << std::hex            // вывод в шестнадцатеричном виде
+        << std::setfill('0');  // отсутствующие разряды заполняем '0'
+
+    for (unsigned int i = 0; i < hashLen; ++i)
+        // "%02x" → две позиции, ведущие нули, нижний регистр
+        oss << std::setw(2)
+            << static_cast<unsigned int>(hash[i]);  // важно! не char
+
+    return oss.str();
 }
 
 AesCipherParams CryptoGuardCtx::PImpl::CreateChiperParamsFromPassword(std::string_view password) {
@@ -90,9 +138,9 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
     std::ostream &outStream,
     const AesCipherParams& params) 
 {
-    if (!EVP_CipherInit_ex(ctx_, params.cipher, nullptr, params.key.data(), params.iv.data(), static_cast<int>(params.encrypt))) {
+    if (!EVP_CipherInit_ex(chiper_ctx_, params.cipher, nullptr, params.key.data(), params.iv.data(), static_cast<int>(params.encrypt))) {
         /* Error */
-        EVP_CIPHER_CTX_free(ctx_);
+        EVP_CIPHER_CTX_free(chiper_ctx_);
         throw std::runtime_error{"Failed to inicialised"};
     }
 
@@ -108,7 +156,7 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
 
         if (bytesRead <= 0) break;
 
-        if (!EVP_CipherUpdate(ctx_,
+        if (!EVP_CipherUpdate(chiper_ctx_,
                           outBuf.data(),
                           &outLen,
                           inBuf.data(),
@@ -122,7 +170,7 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
         }
     }
 
-    if (!EVP_CipherFinal_ex(ctx_, outBuf.data(), &outLen)) throw std::runtime_error("EVP_CipherFinal_ex failed");
+    if (!EVP_CipherFinal_ex(chiper_ctx_, outBuf.data(), &outLen)) throw std::runtime_error("EVP_CipherFinal_ex failed");
 
     if (outLen > 0)
     {
