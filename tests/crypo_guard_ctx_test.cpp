@@ -83,3 +83,49 @@ TEST(TestComponentName, CombineTest)
     const std::string decryptedDataChecksum = cryptoGuard.CalculateChecksum(decryptedDataInStream);
     EXPECT_EQ(originalDataChecksum, decryptedDataChecksum);
 }
+
+// Custom streambuf that always fails on write (overflow returns EOF).
+class FailingBuf : public std::stringbuf
+{
+    int overflow(int) override { return traits_type::eof(); }
+};
+
+TEST(TestComponentName, ThrowOnBrokenIO) 
+{ 
+    using namespace CryptoGuard;
+    {
+        std::istringstream badIn(data);
+        badIn.setstate(std::ios::badbit);
+        std::ostringstream goodOut;
+
+        CryptoGuardCtx ctx;
+        EXPECT_THROW(ctx.CalculateChecksum(badIn), std::runtime_error);
+        EXPECT_THROW(ctx.EncryptFile(badIn, goodOut, password), std::runtime_error);
+        EXPECT_THROW(ctx.DecryptFile(badIn, goodOut, password), std::runtime_error);
+    }
+
+    {
+        std::istringstream goodIn1(data);
+
+        FailingBuf        buf;
+        std::ostream      badOut(&buf);
+
+        CryptoGuardCtx ctx;
+        EXPECT_THROW(ctx.EncryptFile(goodIn1, badOut, password), std::runtime_error);
+
+        std::istringstream goodIn2(data);
+        EXPECT_THROW(ctx.DecryptFile(goodIn2, badOut, password), std::runtime_error);
+    }
+
+    {
+        std::istringstream badIn(data);
+        badIn.setstate(std::ios::badbit);
+
+        std::ostringstream badOut;
+        badOut.setstate(std::ios::badbit); 
+
+        CryptoGuardCtx ctx;
+        EXPECT_THROW(ctx.EncryptFile(badIn, badOut, password), std::runtime_error);
+        EXPECT_THROW(ctx.DecryptFile(badIn, badOut, password), std::runtime_error);
+    }
+}

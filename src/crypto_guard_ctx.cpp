@@ -39,7 +39,6 @@ public:
     [[nodiscard]] std::string CalculateChecksum(std::istream &inStream);
 
 private:
-
 AesCipherParams CreateChiperParamsFromPassword(std::string_view password);
 void ApplyCryptoOperation(std::istream &inStream, std::ostream &outStream, const AesCipherParams& params);
 
@@ -77,6 +76,7 @@ std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream)
     const std::size_t BUF_SIZE = 4096;
     std::vector<unsigned char> inBuf(BUF_SIZE);
 
+    if (inStream.bad()) throw std::runtime_error("Stream read error (badbit set)");
     while (inStream) {
         inStream.read(reinterpret_cast<char*>(inBuf.data()), BUF_SIZE);
         std::streamsize bytesRead = inStream.gcount();
@@ -92,15 +92,14 @@ std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream)
 
     if (!EVP_DigestFinal_ex(md_ctx_.get(), hash, &hashLen)) throw std::runtime_error("EVP_DigestFinal_ex failed");
     
-
     std::ostringstream oss;
-    oss << std::hex            // вывод в шестнадцатеричном виде
-        << std::setfill('0');  // отсутствующие разряды заполняем '0'
+    oss << std::hex              // output in hexadecimal format
+        << std::setfill('0');    // fill missing digits with '0'
 
     for (unsigned int i = 0; i < hashLen; ++i)
-        // "%02x" → две позиции, ведущие нули, нижний регистр
+        // "%02x" → two digits, leading zeros, lowercase
         oss << std::setw(2)
-            << static_cast<unsigned int>(hash[i]);  // важно! не char
+            << static_cast<unsigned int>(hash[i]);  // not char
 
     return oss.str();
 }
@@ -131,7 +130,8 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
     std::vector<unsigned char> inBuf(BUF_SIZE);
     std::vector<unsigned char> outBuf(BUF_SIZE + EVP_MAX_BLOCK_LENGTH);
     int outLen = 0;
-
+    
+    if (inStream.bad()) throw std::runtime_error("Stream read error (badbit set)");
     while (inStream) {
         inStream.read(reinterpret_cast<char*>(inBuf.data()), BUF_SIZE);
         std::streamsize bytesRead = inStream.gcount();
