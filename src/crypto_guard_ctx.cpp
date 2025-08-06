@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <openssl/evp.h>
+#include <openssl/err.h>
 
 namespace CryptoGuard {
 
@@ -24,6 +25,17 @@ struct AesCipherParams {
     std::array<unsigned char, KEY_SIZE> key;  // Encryption key
     std::array<unsigned char, IV_SIZE> iv;    // Initialization vector
 };
+
+std::string getLastOpenSSLError()
+{
+    unsigned long errCode = ERR_get_error();
+    if (errCode == 0)
+        return "No OpenSSL error";
+
+    char buf[256];
+    ERR_error_string_n(errCode, buf, sizeof(buf));
+    return std::string(buf);
+}
 
 class CryptoGuardCtx::PImpl {
 public:
@@ -71,7 +83,7 @@ void CryptoGuardCtx::PImpl::DecryptFile(std::istream &inStream, std::ostream &ou
 
 std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream) 
 {
-    if (!EVP_DigestInit_ex(md_ctx_.get(), EVP_sha256(), nullptr)) throw std::runtime_error("EVP_DigestInit_ex failed");
+    if (!EVP_DigestInit_ex(md_ctx_.get(), EVP_sha256(), nullptr)) throw std::runtime_error("EVP_DigestInit_ex failed: " + getLastOpenSSLError());
 
     const std::size_t BUF_SIZE = 4096;
     std::vector<unsigned char> inBuf(BUF_SIZE);
@@ -84,13 +96,13 @@ std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream)
 
         if (bytesRead <= 0) break;
 
-        if (!EVP_DigestUpdate(md_ctx_.get(), inBuf.data(), static_cast<int>(bytesRead))) throw std::runtime_error("EVP_DigestUpdate failed");
+        if (!EVP_DigestUpdate(md_ctx_.get(), inBuf.data(), static_cast<int>(bytesRead))) throw std::runtime_error("EVP_DigestUpdate failed: " + getLastOpenSSLError());
     }
 
     unsigned char hash[EVP_MAX_MD_SIZE];
     unsigned int hashLen = 0;
 
-    if (!EVP_DigestFinal_ex(md_ctx_.get(), hash, &hashLen)) throw std::runtime_error("EVP_DigestFinal_ex failed");
+    if (!EVP_DigestFinal_ex(md_ctx_.get(), hash, &hashLen)) throw std::runtime_error("EVP_DigestFinal_ex failed: " + getLastOpenSSLError());
     
     std::ostringstream oss;
     oss << std::hex              // output in hexadecimal format
@@ -123,14 +135,14 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
     const AesCipherParams& params) 
 {
     if (!EVP_CipherInit_ex(chiper_ctx_.get(), params.cipher, nullptr, params.key.data(), params.iv.data(), static_cast<int>(params.encrypt))) {
-        throw std::runtime_error{"Failed to inicialised"};
+        throw std::runtime_error{"Failed to inicialised: " + getLastOpenSSLError()};
     }
 
     const std::size_t BUF_SIZE = 4096;
     std::vector<unsigned char> inBuf(BUF_SIZE);
     std::vector<unsigned char> outBuf(BUF_SIZE + EVP_MAX_BLOCK_LENGTH);
     int outLen = 0;
-    
+
     if (inStream.bad()) throw std::runtime_error("Stream read error (badbit set)");
     while (inStream) {
         inStream.read(reinterpret_cast<char*>(inBuf.data()), BUF_SIZE);
@@ -144,7 +156,7 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
                           &outLen,
                           inBuf.data(),
                           static_cast<int>(bytesRead)))
-        throw std::runtime_error("EVP_CipherUpdate failed");
+        throw std::runtime_error("EVP_CipherUpdate failed: " + getLastOpenSSLError());
 
         if (outLen > 0 )
         {
@@ -153,7 +165,7 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(
         }
     }
 
-    if (!EVP_CipherFinal_ex(chiper_ctx_.get(), outBuf.data(), &outLen)) throw std::runtime_error("EVP_CipherFinal_ex failed");
+    if (!EVP_CipherFinal_ex(chiper_ctx_.get(), outBuf.data(), &outLen)) throw std::runtime_error("EVP_CipherFinal_ex failed: " + getLastOpenSSLError());
 
     if (outLen > 0)
     {
