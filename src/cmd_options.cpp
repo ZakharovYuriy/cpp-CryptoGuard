@@ -35,9 +35,8 @@ ProgramOptions::ProgramOptions(int argc, const char* const argv[]) : desc_("Allo
     po::notify(vm);
 
     if (vm.contains("help"s)) {
-        // If the --help parameter was specified, then output the help and return nullopt
         std::cout << desc_;
-        std::exit(EXIT_SUCCESS);
+        throw HelpRequested (desc_);
     }
 
     if (!vm.contains("input"s)) {

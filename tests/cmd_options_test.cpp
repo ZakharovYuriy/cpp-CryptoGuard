@@ -33,7 +33,7 @@ TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing)
 
     // Check that creating ProgramOptions with only the help option does not throw an exception
     const char* onlyHelpOption[] = {programName,helpOpt};
-    EXPECT_NO_THROW(ProgramOptions programOptions(2,onlyHelpOption)); 
+    EXPECT_THROW(ProgramOptions programOptions(2,onlyHelpOption), HelpRequested); 
 
     // all required options including output explicitly provided → should not throw
     const char* allOutputOption[] = {programName,commandOpt,commandEncrypt,inputOpt,inputFileName,outputOpt,outputFileName,passwordOpt,password};

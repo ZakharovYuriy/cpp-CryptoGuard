@@ -2,9 +2,15 @@
 
 #include <boost/program_options.hpp>
 #include <string>
-#include <unordered_map>
 
 namespace CryptoGuard {
+
+struct HelpRequested : std::exception {
+    explicit HelpRequested(
+    const boost::program_options::options_description& d) : desc(&d) {}
+    const char* what() const noexcept override { return "help requested"; }
+    const boost::program_options::options_description* desc;
+};
 
 class ProgramOptions {
 public:
