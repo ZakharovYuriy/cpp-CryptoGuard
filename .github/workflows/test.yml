@@ -1,4 +1,4 @@
-name: Tests (docker)
+name: Tests (devcontainer)
 
 on:
   push:
@@ -11,20 +11,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build CI image
-        run: docker build -t cryptoguard-ci .
-
-      - name: Build & run tests inside container
-        run: |
-          docker run --rm \
-            --user root \
-            -v "${{ github.workspace }}:/work" \
-            -w /work \
-            cryptoguard-ci \
-            bash -euxo pipefail -c '
-              mkdir -p build
-              cd build
-              cmake .. -DCMAKE_BUILD_TYPE=Release
-              cmake --build . --parallel
-              ctest -VV
-            '
+      - name: Build & Test inside devcontainer (CI config, no mounts)
+        uses: devcontainers/ci@v0.3
+        with:
+          configFile: .devcontainer/devcontainer.ci.json
+          runCmd: |
+            mkdir -p build
+            cd build
+            cmake .. -DCMAKE_BUILD_TYPE=Release
+            cmake --build . --parallel
+            ctest -VV
