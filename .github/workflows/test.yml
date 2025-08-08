@@ -14,7 +14,7 @@ jobs:
       - name: Build & Test inside devcontainer (CI config, no mounts)
         uses: devcontainers/ci@v0.3
         with:
-          configFile: .devcontainer/devcontainer.ci.json
+          configFile: .devcontainer/ci/devcontainer.json
           runCmd: |
             mkdir -p build
             cd build
