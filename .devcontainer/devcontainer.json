@@ -16,6 +16,6 @@
     }
   },
   "mounts": [
-    "source=${env:USERPROFILE}\\.gitconfig,target=/etc/gitconfig,type=bind"
+    "source=${localEnv:HOME}/.gitconfig,target=/etc/gitconfig,type=bind"
   ]
 }
