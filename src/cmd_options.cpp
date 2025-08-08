@@ -3,26 +3,26 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
-using namespace std::literals; 
+using namespace std::literals;
 namespace po = boost::program_options;
 
 namespace CryptoGuard {
 
-ProgramOptions::ProgramOptions(int argc, const char* const argv[]) : desc_("Allowed options") 
-{
-    desc_.add_options()
-        ("help,h", "Show help")
+ProgramOptions::ProgramOptions(int argc, const char *const argv[]) : desc_("Allowed options") {
+    desc_.add_options()("help,h", "Show help")
 
         ("input,i", po::value(&inputFile_)->value_name("file"s), "Path to the input file")
 
-        ("output,o", po::value(&outputFile_)->default_value("./result.txt", "result.txt")->value_name("file"s), "The path to the file where the result will be saved")
+            ("output,o", po::value(&outputFile_)->default_value("./result.txt", "result.txt")->value_name("file"s),
+             "The path to the file where the result will be saved")
 
-        ("command,c", po::value<std::string>()->value_name("command"s)->notifier([this](const std::string& s) 
-        {
-            command_ = parseCommand(s);
-        }), "The encrypt, decrypt, or checksum command")
+                ("command,c", po::value<std::string>()->value_name("command"s)->notifier([this](const std::string &s) {
+                    command_ = parseCommand(s);
+                }),
+                 "The encrypt, decrypt, or checksum command")
 
-        ("password,p", po::value(&password_)->value_name("password"s), "Password for encryption and decryption");
+                    ("password,p", po::value(&password_)->value_name("password"s),
+                     "Password for encryption and decryption");
 
     // Create a container to store the parsed command-line options
     po::variables_map vm;
@@ -36,7 +36,7 @@ ProgramOptions::ProgramOptions(int argc, const char* const argv[]) : desc_("Allo
 
     if (vm.contains("help"s)) {
         std::cout << desc_;
-        throw HelpRequested (desc_);
+        throw HelpRequested(desc_);
     }
 
     if (!vm.contains("input"s)) {
@@ -52,9 +52,9 @@ ProgramOptions::ProgramOptions(int argc, const char* const argv[]) : desc_("Allo
 
 ProgramOptions::~ProgramOptions() = default;
 
-ProgramOptions::COMMAND_TYPE ProgramOptions::parseCommand(const std::string& str) 
-{
-    if (commandMapping_.contains(str)) return commandMapping_.at(str);
+ProgramOptions::COMMAND_TYPE ProgramOptions::parseCommand(const std::string &str) {
+    if (commandMapping_.contains(str))
+        return commandMapping_.at(str);
     throw po::validation_error(po::validation_error::invalid_option_value, "command", str);
 }
 

@@ -1,0 +1,22 @@
+name: Tests (devcontainer)
+
+on:
+  push:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build & Test inside devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          runCmd: |
+            mkdir -p build
+            cd build
+            cmake .. -DCMAKE_BUILD_TYPE=Release
+            cmake --build . --parallel
+            ctest -VV

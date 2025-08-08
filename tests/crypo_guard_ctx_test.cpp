@@ -2,14 +2,13 @@
 
 #include "crypto_guard_ctx.h"
 
-namespace{
+namespace {
 const std::string data = "Hello, world!";
 const std::string password = "123321";
 const std::string differentData = "Hello!";
-}
+}  // namespace
 
-TEST(TestComponentName, TestEncriptDecrypt) 
-{ 
+TEST(TestComponentName, TestEncriptDecrypt) {
     using namespace CryptoGuard;
     CryptoGuardCtx cryptoGuard;
 
@@ -18,7 +17,7 @@ TEST(TestComponentName, TestEncriptDecrypt)
 
     cryptoGuard.EncryptFile(inStreamData, outStream, password);
 
-    std::string encryptedResult = outStream.str(); 
+    std::string encryptedResult = outStream.str();
     EXPECT_FALSE(encryptedResult.empty());
 
     outStream.str("");
@@ -26,13 +25,12 @@ TEST(TestComponentName, TestEncriptDecrypt)
 
     std::istringstream inStreamEncrypted(encryptedResult);
     cryptoGuard.DecryptFile(inStreamEncrypted, outStream, password);
-    std::string decryptedResult = outStream.str(); 
+    std::string decryptedResult = outStream.str();
     EXPECT_FALSE(decryptedResult.empty());
     EXPECT_EQ(data, decryptedResult);
 }
 
-TEST(TestComponentName, TestChecksum) 
-{ 
+TEST(TestComponentName, TestChecksum) {
     using namespace CryptoGuard;
     CryptoGuardCtx cryptoGuard;
 
@@ -49,23 +47,21 @@ TEST(TestComponentName, TestChecksum)
     EXPECT_EQ(dataChecksum, dataChecksumSecondRun);
 }
 
-TEST(TestComponentName, CombineTest) 
-{ 
+TEST(TestComponentName, CombineTest) {
     using namespace CryptoGuard;
     CryptoGuardCtx cryptoGuard;
 
-    
     std::istringstream inStreamData(data);
     std::ostringstream outStream;
 
     const std::string originalDataChecksum = cryptoGuard.CalculateChecksum(inStreamData);
 
-    //reset Positon
-    inStreamData.clear(); 
+    // reset Positon
+    inStreamData.clear();
     inStreamData.seekg(0);
 
     cryptoGuard.EncryptFile(inStreamData, outStream, password);
-    std::string encryptedData = outStream.str(); 
+    std::string encryptedData = outStream.str();
 
     std::istringstream encryptedDataInStream(encryptedData);
     const std::string encryptedDataChecksum = cryptoGuard.CalculateChecksum(encryptedDataInStream);
@@ -77,7 +73,7 @@ TEST(TestComponentName, CombineTest)
     encryptedDataInStream.seekg(0);
 
     cryptoGuard.DecryptFile(encryptedDataInStream, outStream, password);
-    std::string decryptedData = outStream.str(); 
+    std::string decryptedData = outStream.str();
 
     std::istringstream decryptedDataInStream(decryptedData);
     const std::string decryptedDataChecksum = cryptoGuard.CalculateChecksum(decryptedDataInStream);
@@ -85,13 +81,11 @@ TEST(TestComponentName, CombineTest)
 }
 
 // Custom streambuf that always fails on write (overflow returns EOF).
-class FailingBuf : public std::stringbuf
-{
+class FailingBuf : public std::stringbuf {
     int overflow(int) override { return traits_type::eof(); }
 };
 
-TEST(TestComponentName, ThrowOnBrokenIO) 
-{ 
+TEST(TestComponentName, ThrowOnBrokenIO) {
     using namespace CryptoGuard;
     {
         std::istringstream badIn(data);
@@ -107,8 +101,8 @@ TEST(TestComponentName, ThrowOnBrokenIO)
     {
         std::istringstream goodIn1(data);
 
-        FailingBuf        buf;
-        std::ostream      badOut(&buf);
+        FailingBuf buf;
+        std::ostream badOut(&buf);
 
         CryptoGuardCtx ctx;
         EXPECT_THROW(ctx.EncryptFile(goodIn1, badOut, password), std::runtime_error);
@@ -122,7 +116,7 @@ TEST(TestComponentName, ThrowOnBrokenIO)
         badIn.setstate(std::ios::badbit);
 
         std::ostringstream badOut;
-        badOut.setstate(std::ios::badbit); 
+        badOut.setstate(std::ios::badbit);
 
         CryptoGuardCtx ctx;
         EXPECT_THROW(ctx.EncryptFile(badIn, badOut, password), std::runtime_error);

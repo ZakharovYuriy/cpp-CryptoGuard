@@ -6,15 +6,14 @@
 namespace CryptoGuard {
 
 struct HelpRequested : std::exception {
-    explicit HelpRequested(
-    const boost::program_options::options_description& d) : desc(&d) {}
-    const char* what() const noexcept override { return "help requested"; }
-    const boost::program_options::options_description* desc;
+    explicit HelpRequested(const boost::program_options::options_description &d) : desc(&d) {}
+    const char *what() const noexcept override { return "help requested"; }
+    const boost::program_options::options_description *desc;
 };
 
 class ProgramOptions {
 public:
-    ProgramOptions(int argc, const char* const argv[]);
+    ProgramOptions(int argc, const char *const argv[]);
     ~ProgramOptions();
 
     enum class COMMAND_TYPE {
@@ -29,7 +28,7 @@ public:
     std::string GetPassword() const { return password_; }
 
 private:
-    COMMAND_TYPE parseCommand(const std::string& str);
+    COMMAND_TYPE parseCommand(const std::string &str);
 
 private:
     COMMAND_TYPE command_;
