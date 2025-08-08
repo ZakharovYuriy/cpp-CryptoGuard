@@ -11,13 +11,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build & Test inside devcontainer (CI config, no mounts)
+      - name: Build & Test inside devcontainer (CI config)
         uses: devcontainers/ci@v0.3
         with:
           configFile: .devcontainer/ci/devcontainer.json
           runCmd: |
-            mkdir -p build
-            cd build
-            cmake .. -DCMAKE_BUILD_TYPE=Release
-            cmake --build . --parallel
-            ctest -VV
+            conan profile detect --force || true
+            conan install . --output-folder=build --build=missing -s build_type=Release
+            cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
+            cmake --build build --parallel
+            ctest --test-dir build -VV
