@@ -11,12 +11,12 @@ namespace CryptoGuard {
 ProgramOptions::ProgramOptions(int argc, const char *const argv[]) : desc_("Allowed options") {
     desc_.add_options()("help,h", "Show help")
 
-        ("input,i", po::value(&inputFile_)->value_name("file"s), "Path to the input file")
+        ("input,i", po::value(&inputFile_)->required()->value_name("file"s), "Path to the input file")
 
             ("output,o", po::value(&outputFile_)->default_value("./result.txt", "result.txt")->value_name("file"s),
              "The path to the file where the result will be saved")
 
-                ("command,c", po::value<std::string>()->value_name("command"s)->notifier([this](const std::string &s) {
+                ("command,c", po::value<std::string>()->required()->value_name("command"s)->notifier([this](const std::string &s) {
                     command_ = parseCommand(s);
                 }),
                  "The encrypt, decrypt, or checksum command")
@@ -31,20 +31,14 @@ ProgramOptions::ProgramOptions(int argc, const char *const argv[]) : desc_("Allo
     // and store the result in the variables_map 'vm'
     po::store(po::parse_command_line(argc, argv, desc_), vm);
 
-    // Transfer the values from 'vm' into the variables they are linked to
-    po::notify(vm);
-
     if (vm.contains("help"s)) {
         std::cout << desc_;
         throw HelpRequested();
     }
+    
+    // Transfer the values from 'vm' into the variables they are linked to
+    po::notify(vm);
 
-    if (!vm.contains("input"s)) {
-        throw std::runtime_error("Input files have not been specified"s);
-    }
-    if (!vm.contains("command"s)) {
-        throw std::runtime_error("Command is not specified"s);
-    }
     if (!vm.contains("password"s)) {
         if (command_ != COMMAND_TYPE::CHECKSUM) throw std::runtime_error("Password is not specified"s);
     }

@@ -29,6 +29,7 @@ using Command = CryptoGuard::ProgramOptions::COMMAND_TYPE;
 // Aliases for expected exception types (kept near the top for reuse)
 using parameterError = boost::program_options::invalid_command_line_syntax;
 using validationError = boost::program_options::validation_error;
+using requiredFeildError = boost::program_options::required_option;
 
 // --- Missing/Help cases ---
 
@@ -44,7 +45,7 @@ TEST(ProgramOptions, ThrowsHelpRequestedWhenOnlyHelpOption) {
     EXPECT_THROW(ProgramOptions programOptions(2, onlyHelpOption), HelpRequested);
 }
 
-// --- Happy paths ---
+// --- Valid cases ---
 
 TEST(ProgramOptions, NoThrow_AllRequiredOptionsWithExplicitOutput) {
     // All required options including explicit output → should not throw
@@ -82,7 +83,7 @@ TEST(ProgramOptions, ThrowsWhenInputOptionMissingEntirely) {
     const char* noInputOption[] = {
         programName, commandOpt, commandEncrypt, passwordOpt, password
     };
-    EXPECT_THROW(ProgramOptions programOptions(5, noInputOption), std::runtime_error);
+    EXPECT_THROW(ProgramOptions programOptions(5, noInputOption), requiredFeildError);
 }
 
 TEST(ProgramOptions, ThrowsWhenInputArgumentMissing) {
@@ -119,7 +120,7 @@ TEST(ProgramOptions, ThrowsWhenCommandOptionMissingEntirely) {
     const char* noCommandOption[] = {
         programName, inputOpt, inputFileName, passwordOpt, password
     };
-    EXPECT_THROW(ProgramOptions programOptions(5, noCommandOption), std::runtime_error);
+    EXPECT_THROW(ProgramOptions programOptions(5, noCommandOption), requiredFeildError);
 }
 
 TEST(ProgramOptions, ThrowsWhenCommandArgumentMissing) {
