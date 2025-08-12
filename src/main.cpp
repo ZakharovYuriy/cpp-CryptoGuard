@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
         switch (programOptions.GetCommand()) {
         case COMMAND_TYPE::ENCRYPT: {
             auto inStream = openInputBinaryFile(programOptions.GetInputFile());
-            auto outStream = openOutputBinaryFile(programOptions.GetInputFile());
+            auto outStream = openOutputBinaryFile(programOptions.GetOutputFile());
             cryptoCtx.EncryptFile(inStream, outStream, programOptions.GetPassword());
             std::print("File encoded successfully\n");
             break;
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
         case COMMAND_TYPE::DECRYPT: {
             auto inStream = openInputBinaryFile(programOptions.GetInputFile());
-            auto outStream = openOutputBinaryFile(programOptions.GetInputFile());
+            auto outStream = openOutputBinaryFile(programOptions.GetOutputFile());
             cryptoCtx.DecryptFile(inStream, outStream, programOptions.GetPassword());
             std::print("File decoded successfully\n");
             break;

@@ -36,7 +36,7 @@ ProgramOptions::ProgramOptions(int argc, const char *const argv[]) : desc_("Allo
 
     if (vm.contains("help"s)) {
         std::cout << desc_;
-        throw HelpRequested(desc_);
+        throw HelpRequested();
     }
 
     if (!vm.contains("input"s)) {
@@ -53,8 +53,8 @@ ProgramOptions::ProgramOptions(int argc, const char *const argv[]) : desc_("Allo
 ProgramOptions::~ProgramOptions() = default;
 
 ProgramOptions::COMMAND_TYPE ProgramOptions::parseCommand(const std::string &str) {
-    if (commandMapping_.contains(str))
-        return commandMapping_.at(str);
+    if (auto it = commandMapping_.find(str); it != commandMapping_.end())
+        return it->second;
     throw po::validation_error(po::validation_error::invalid_option_value, "command", str);
 }
 

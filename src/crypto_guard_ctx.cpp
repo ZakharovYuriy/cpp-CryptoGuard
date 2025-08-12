@@ -33,6 +33,19 @@ std::string getLastOpenSSLError() {
     return std::string(buf);
 }
 
+template<typename Operation>
+void applyOperationWithIOstreamCheck(std::istream &inStream, std::ostream &outStream,Operation&& operation){
+    if (!inStream.good())
+        throw std::runtime_error("Stream read error");
+    if (!outStream)
+                throw std::runtime_error("Stream write error before processing");
+
+    operation();
+
+    if (!outStream.good())
+        throw std::runtime_error("Stream write error after processing");
+}
+
 class CryptoGuardCtx::PImpl {
 public:
     PImpl();
@@ -63,26 +76,29 @@ CryptoGuardCtx::PImpl::PImpl() : chiper_ctx_(EVP_CIPHER_CTX_new()), md_ctx_(EVP_
 };
 
 void CryptoGuardCtx::PImpl::EncryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) {
+    applyOperationWithIOstreamCheck(inStream, outStream, [this,&inStream, &outStream, &password]{
     auto params = CreateChiperParamsFromPassword(password);
     params.encrypt = AesCipherParams::CryptoOperaTionType::ENCRYPT;
-    ApplyCryptoOperation(inStream, outStream, params);
+    ApplyCryptoOperation(inStream, outStream, params);});
 }
 
 void CryptoGuardCtx::PImpl::DecryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) {
+    applyOperationWithIOstreamCheck(inStream, outStream, [this,&inStream, &outStream, &password]{
     auto params = CreateChiperParamsFromPassword(password);
     params.encrypt = AesCipherParams::CryptoOperaTionType::DECRYPT;
-    ApplyCryptoOperation(inStream, outStream, params);
+    ApplyCryptoOperation(inStream, outStream, params);});
 }
 
 std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream) {
+    if (!inStream.good())
+        throw std::runtime_error("Stream read error");
+    
     if (!EVP_DigestInit_ex(md_ctx_.get(), EVP_sha256(), nullptr))
         throw std::runtime_error("EVP_DigestInit_ex failed: " + getLastOpenSSLError());
 
     const std::size_t BUF_SIZE = 4096;
     std::vector<unsigned char> inBuf(BUF_SIZE);
 
-    if (inStream.bad())
-        throw std::runtime_error("Stream read error (badbit set)");
     while (inStream) {
         inStream.read(reinterpret_cast<char *>(inBuf.data()), BUF_SIZE);
         std::streamsize bytesRead = inStream.gcount();
@@ -96,10 +112,10 @@ std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream) {
             throw std::runtime_error("EVP_DigestUpdate failed: " + getLastOpenSSLError());
     }
 
-    unsigned char hash[EVP_MAX_MD_SIZE];
+    std::array<unsigned char, EVP_MAX_MD_SIZE> hash;
     unsigned int hashLen = 0;
 
-    if (!EVP_DigestFinal_ex(md_ctx_.get(), hash, &hashLen))
+    if (!EVP_DigestFinal_ex(md_ctx_.get(), hash.data(), &hashLen))
         throw std::runtime_error("EVP_DigestFinal_ex failed: " + getLastOpenSSLError());
 
     std::ostringstream oss;
@@ -139,13 +155,9 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(std::istream &inStream, std::os
     std::vector<unsigned char> outBuf(BUF_SIZE + EVP_MAX_BLOCK_LENGTH);
     int outLen = 0;
 
-    if (inStream.bad())
-        throw std::runtime_error("Stream read error (badbit set)");
     while (inStream) {
         inStream.read(reinterpret_cast<char *>(inBuf.data()), BUF_SIZE);
         std::streamsize bytesRead = inStream.gcount();
-        if (inStream.bad())
-            throw std::runtime_error("Stream read error (badbit set)");
 
         if (bytesRead <= 0)
             break;
@@ -155,8 +167,6 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(std::istream &inStream, std::os
 
         if (outLen > 0) {
             outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
-            if (!outStream)
-                throw std::runtime_error("Stream write error");
         }
     }
 
@@ -165,8 +175,6 @@ void CryptoGuardCtx::PImpl::ApplyCryptoOperation(std::istream &inStream, std::os
 
     if (outLen > 0) {
         outStream.write(reinterpret_cast<char *>(outBuf.data()), outLen);
-        if (!outStream)
-            throw std::runtime_error("Stream write error");
     }
 }
 

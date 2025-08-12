@@ -23,9 +23,10 @@ const char *wrongCommand = "wrongCommand";
 const char *defaultOutputFilePtah = "./result.txt";
 }  // namespace
 
-TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing) {
-    using namespace ::CryptoGuard;
+using namespace ::CryptoGuard;
+using Command = CryptoGuard::ProgramOptions::COMMAND_TYPE;
 
+TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing) {
     // no options passed at all → should throw due to missing required options
     const char *noOptions[] = {programName};
     EXPECT_ANY_THROW(ProgramOptions programOptions(1, noOptions));
@@ -88,43 +89,39 @@ TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing) {
     EXPECT_THROW(ProgramOptions programOptions(7, wrongCommandOptionArgument), validationError);
 }
 
-TEST(ProgramOptions, CheckParsedArguments) {
-    using namespace ::CryptoGuard;
-    using Command = CryptoGuard::ProgramOptions::COMMAND_TYPE;
-    // check all options with ENCRYPT command
-    {
-        const char *allOutputOption[] = {programName, commandOpt,     commandEncrypt, inputOpt, inputFileName,
-                                         outputOpt,   outputFileName, passwordOpt,    password};
-        ProgramOptions programOptions(9, allOutputOption);
+// Check Parsed Arguments all options with ENCRYPT command
+TEST(ProgramOptions, CheckAllOptionsWithEncryptCommand) {
+    const char *allOutputOption[] = {programName, commandOpt,     commandEncrypt, inputOpt, inputFileName,
+                                        outputOpt,   outputFileName, passwordOpt,    password};
+    ProgramOptions programOptions(9, allOutputOption);
 
-        EXPECT_EQ(programOptions.GetInputFile(), inputFileName);
-        EXPECT_EQ(programOptions.GetOutputFile(), outputFileName);
-        EXPECT_EQ(programOptions.GetPassword(), password);
-        EXPECT_EQ(programOptions.GetCommand(), Command::ENCRYPT);
-    }
+    EXPECT_EQ(programOptions.GetInputFile(), inputFileName);
+    EXPECT_EQ(programOptions.GetOutputFile(), outputFileName);
+    EXPECT_EQ(programOptions.GetPassword(), password);
+    EXPECT_EQ(programOptions.GetCommand(), Command::ENCRYPT);
+}
 
-    // check DECRYPT command parsing
-    {
+// Check Parsed Arguments DECRYPT command parsing
+TEST(ProgramOptions, CheckDecryptCommandParsing) {
         const char *allOutputOptionCommand[] = {programName, commandOpt,     commandDecrypt, inputOpt, inputFileName,
                                                 outputOpt,   outputFileName, passwordOpt,    password};
         ProgramOptions programOptions(9, allOutputOptionCommand);
         EXPECT_EQ(programOptions.GetCommand(), Command::DECRYPT);
-    }
+}
 
-    // check CHECKSUM command parsing
-    {
-        const char *allOutputOptionCommand[] = {programName, commandOpt,     commandChecksum, inputOpt, inputFileName,
-                                                outputOpt,   outputFileName, passwordOpt,     password};
-        ProgramOptions programOptions(9, allOutputOptionCommand);
-        EXPECT_EQ(programOptions.GetCommand(), Command::CHECKSUM);
-    }
+// Check Parsed Arguments CHECKSUM command parsing
+TEST(ProgramOptions, CheckChecksumCommandParsing) {
+    const char *allOutputOptionCommand[] = {programName, commandOpt,     commandChecksum, inputOpt, inputFileName,
+                                            outputOpt,   outputFileName, passwordOpt,     password};
+    ProgramOptions programOptions(9, allOutputOptionCommand);
+    EXPECT_EQ(programOptions.GetCommand(), Command::CHECKSUM);
+}
 
-    // check default output path when output option is not provided
-    {
-        const char *allOutputOption[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
-                                         inputFileName, passwordOpt, password};
-        ProgramOptions programOptions(7, allOutputOption);
+// Check Parsed Arguments default output path when output option is not provided
+TEST(ProgramOptions, CheckDefaultOutputPathWhenNoOutputOption) {
+    const char *allOutputOption[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
+                                        inputFileName, passwordOpt, password};
+    ProgramOptions programOptions(7, allOutputOption);
 
-        EXPECT_EQ(programOptions.GetOutputFile(), defaultOutputFilePtah);
-    }
+    EXPECT_EQ(programOptions.GetOutputFile(), defaultOutputFilePtah);
 }

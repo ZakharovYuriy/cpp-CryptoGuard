@@ -6,9 +6,8 @@
 namespace CryptoGuard {
 
 struct HelpRequested : std::exception {
-    explicit HelpRequested(const boost::program_options::options_description &d) : desc(&d) {}
+    explicit HelpRequested() {}
     const char *what() const noexcept override { return "help requested"; }
-    const boost::program_options::options_description *desc;
 };
 
 class ProgramOptions {
