@@ -33,12 +33,12 @@ std::string getLastOpenSSLError() {
     return std::string(buf);
 }
 
-template<typename Operation>
-void applyOperationWithIOstreamCheck(std::istream &inStream, std::ostream &outStream,Operation&& operation){
+template <typename Operation>
+void applyOperationWithIOstreamCheck(std::istream &inStream, std::ostream &outStream, Operation &&operation) {
     if (!inStream.good())
         throw std::runtime_error("Stream read error");
     if (!outStream)
-                throw std::runtime_error("Stream write error before processing");
+        throw std::runtime_error("Stream write error before processing");
 
     operation();
 
@@ -76,23 +76,25 @@ CryptoGuardCtx::PImpl::PImpl() : chiper_ctx_(EVP_CIPHER_CTX_new()), md_ctx_(EVP_
 };
 
 void CryptoGuardCtx::PImpl::EncryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) {
-    applyOperationWithIOstreamCheck(inStream, outStream, [this,&inStream, &outStream, &password]{
-    auto params = CreateChiperParamsFromPassword(password);
-    params.encrypt = AesCipherParams::CryptoOperaTionType::ENCRYPT;
-    ApplyCryptoOperation(inStream, outStream, params);});
+    applyOperationWithIOstreamCheck(inStream, outStream, [this, &inStream, &outStream, &password] {
+        auto params = CreateChiperParamsFromPassword(password);
+        params.encrypt = AesCipherParams::CryptoOperaTionType::ENCRYPT;
+        ApplyCryptoOperation(inStream, outStream, params);
+    });
 }
 
 void CryptoGuardCtx::PImpl::DecryptFile(std::istream &inStream, std::ostream &outStream, std::string_view password) {
-    applyOperationWithIOstreamCheck(inStream, outStream, [this,&inStream, &outStream, &password]{
-    auto params = CreateChiperParamsFromPassword(password);
-    params.encrypt = AesCipherParams::CryptoOperaTionType::DECRYPT;
-    ApplyCryptoOperation(inStream, outStream, params);});
+    applyOperationWithIOstreamCheck(inStream, outStream, [this, &inStream, &outStream, &password] {
+        auto params = CreateChiperParamsFromPassword(password);
+        params.encrypt = AesCipherParams::CryptoOperaTionType::DECRYPT;
+        ApplyCryptoOperation(inStream, outStream, params);
+    });
 }
 
 std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream) {
     if (!inStream.good())
         throw std::runtime_error("Stream read error");
-    
+
     if (!EVP_DigestInit_ex(md_ctx_.get(), EVP_sha256(), nullptr))
         throw std::runtime_error("EVP_DigestInit_ex failed: " + getLastOpenSSLError());
 

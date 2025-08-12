@@ -35,13 +35,13 @@ using requiredFeildError = boost::program_options::required_option;
 
 TEST(ProgramOptions, ThrowsWhenNoOptionsProvided) {
     // No options at all → should throw due to missing required options
-    const char* noOptions[] = {programName};
+    const char *noOptions[] = {programName};
     EXPECT_ANY_THROW(ProgramOptions programOptions(1, noOptions));
 }
 
 TEST(ProgramOptions, ThrowsHelpRequestedWhenOnlyHelpOption) {
     // Only --help → should throw a dedicated HelpRequested exception
-    const char* onlyHelpOption[] = {programName, helpOpt};
+    const char *onlyHelpOption[] = {programName, helpOpt};
     EXPECT_THROW(ProgramOptions programOptions(2, onlyHelpOption), HelpRequested);
 }
 
@@ -49,19 +49,15 @@ TEST(ProgramOptions, ThrowsHelpRequestedWhenOnlyHelpOption) {
 
 TEST(ProgramOptions, NoThrow_AllRequiredOptionsWithExplicitOutput) {
     // All required options including explicit output → should not throw
-    const char* allOutputOption[] = {
-        programName, commandOpt, commandEncrypt, inputOpt, inputFileName,
-        outputOpt, outputFileName, passwordOpt, password
-    };
+    const char *allOutputOption[] = {programName, commandOpt,     commandEncrypt, inputOpt, inputFileName,
+                                     outputOpt,   outputFileName, passwordOpt,    password};
     EXPECT_NO_THROW(ProgramOptions programOptions(9, allOutputOption));
 }
 
 TEST(ProgramOptions, NoThrow_OutputOmittedUsesDefault) {
     // Output option omitted → should use default value and not throw
-    const char* defaultOutputOption[] = {
-        programName, commandOpt, commandEncrypt, inputOpt,
-        inputFileName, passwordOpt, password
-    };
+    const char *defaultOutputOption[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
+                                         inputFileName, passwordOpt, password};
     EXPECT_NO_THROW(ProgramOptions programOptions(7, defaultOutputOption));
 }
 
@@ -69,10 +65,8 @@ TEST(ProgramOptions, NoThrow_OutputOmittedUsesDefault) {
 
 TEST(ProgramOptions, ThrowsWhenOutputArgumentMissing) {
     // Output flag present but its argument is missing
-    const char* noOutputOptionArgument[] = {
-        programName, commandOpt, commandEncrypt, inputOpt,
-        inputFileName, passwordOpt, password, outputOpt
-    };
+    const char *noOutputOptionArgument[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
+                                            inputFileName, passwordOpt, password,       outputOpt};
     EXPECT_THROW(ProgramOptions programOptions(8, noOutputOptionArgument), parameterError);
 }
 
@@ -80,17 +74,13 @@ TEST(ProgramOptions, ThrowsWhenOutputArgumentMissing) {
 
 TEST(ProgramOptions, ThrowsWhenInputOptionMissingEntirely) {
     // Missing --input option and its argument
-    const char* noInputOption[] = {
-        programName, commandOpt, commandEncrypt, passwordOpt, password
-    };
+    const char *noInputOption[] = {programName, commandOpt, commandEncrypt, passwordOpt, password};
     EXPECT_THROW(ProgramOptions programOptions(5, noInputOption), requiredFeildError);
 }
 
 TEST(ProgramOptions, ThrowsWhenInputArgumentMissing) {
     // --input provided without an argument
-    const char* noInputOptionArgument[] = {
-        programName, commandOpt, commandEncrypt, passwordOpt, password, inputOpt
-    };
+    const char *noInputOptionArgument[] = {programName, commandOpt, commandEncrypt, passwordOpt, password, inputOpt};
     EXPECT_THROW(ProgramOptions programOptions(6, noInputOptionArgument), parameterError);
 }
 
@@ -98,18 +88,14 @@ TEST(ProgramOptions, ThrowsWhenInputArgumentMissing) {
 
 TEST(ProgramOptions, ThrowsWhenPasswordOptionMissingEntirely) {
     // Missing --password option and its argument
-    const char* noPasswordOption[] = {
-        programName, commandOpt, commandEncrypt, inputOpt, inputFileName
-    };
+    const char *noPasswordOption[] = {programName, commandOpt, commandEncrypt, inputOpt, inputFileName};
     EXPECT_THROW(ProgramOptions programOptions(5, noPasswordOption), std::runtime_error);
 }
 
 TEST(ProgramOptions, ThrowsWhenPasswordArgumentMissing) {
     // --password provided without an argument
-    const char* noPasswordOptionArgument[] = {
-        programName, commandOpt, commandEncrypt,
-        inputOpt, inputFileName, passwordOpt
-    };
+    const char *noPasswordOptionArgument[] = {programName, commandOpt,    commandEncrypt,
+                                              inputOpt,    inputFileName, passwordOpt};
     EXPECT_THROW(ProgramOptions programOptions(6, noPasswordOptionArgument), parameterError);
 }
 
@@ -117,43 +103,30 @@ TEST(ProgramOptions, ThrowsWhenPasswordArgumentMissing) {
 
 TEST(ProgramOptions, ThrowsWhenCommandOptionMissingEntirely) {
     // Missing --command option and its argument
-    const char* noCommandOption[] = {
-        programName, inputOpt, inputFileName, passwordOpt, password
-    };
+    const char *noCommandOption[] = {programName, inputOpt, inputFileName, passwordOpt, password};
     EXPECT_THROW(ProgramOptions programOptions(5, noCommandOption), requiredFeildError);
 }
 
 TEST(ProgramOptions, ThrowsWhenCommandArgumentMissing) {
     // --command provided without an argument
-    const char* noCommandOptionArgument[] = {
-        programName, inputOpt, inputFileName, passwordOpt, password, commandOpt
-    };
+    const char *noCommandOptionArgument[] = {programName, inputOpt, inputFileName, passwordOpt, password, commandOpt};
     EXPECT_THROW(ProgramOptions programOptions(6, noCommandOptionArgument), parameterError);
 }
 
 // --- Valid command values ---
 
 TEST(ProgramOptions, NoThrow_CommandEncrypt) {
-    const char* args[] = {
-        programName, inputOpt, inputFileName, passwordOpt,
-        password, commandOpt, commandEncrypt
-    };
+    const char *args[] = {programName, inputOpt, inputFileName, passwordOpt, password, commandOpt, commandEncrypt};
     EXPECT_NO_THROW(ProgramOptions programOptions(7, args));
 }
 
 TEST(ProgramOptions, NoThrow_CommandDecrypt) {
-    const char* args[] = {
-        programName, inputOpt, inputFileName, passwordOpt,
-        password, commandOpt, commandDecrypt
-    };
+    const char *args[] = {programName, inputOpt, inputFileName, passwordOpt, password, commandOpt, commandDecrypt};
     EXPECT_NO_THROW(ProgramOptions programOptions(7, args));
 }
 
 TEST(ProgramOptions, NoThrow_CommandChecksum) {
-    const char* args[] = {
-        programName, inputOpt, inputFileName, passwordOpt,
-        password, commandOpt, commandChecksum
-    };
+    const char *args[] = {programName, inputOpt, inputFileName, passwordOpt, password, commandOpt, commandChecksum};
     EXPECT_NO_THROW(ProgramOptions programOptions(7, args));
 }
 
@@ -161,10 +134,8 @@ TEST(ProgramOptions, NoThrow_CommandChecksum) {
 
 TEST(ProgramOptions, ThrowsWhenCommandValueInvalid) {
     // Command argument is not one of encrypt/decrypt/checksum
-    const char* wrongCommandOptionArgument[] = {
-        programName, inputOpt, inputFileName, passwordOpt,
-        password, commandOpt, wrongCommand
-    };
+    const char *wrongCommandOptionArgument[] = {programName, inputOpt,   inputFileName, passwordOpt,
+                                                password,    commandOpt, wrongCommand};
     EXPECT_THROW(ProgramOptions programOptions(7, wrongCommandOptionArgument), validationError);
 }
 
@@ -172,17 +143,15 @@ TEST(ProgramOptions, ThrowsWhenCommandValueInvalid) {
 
 TEST(ProgramOptions, ThrowsWhenInputEqualsOutput) {
     // Parsed arguments validation: input file must differ from output file
-    const char* inputEqualsOutputOptionCommand[] = {
-        programName, commandOpt, commandDecrypt, inputOpt, inputFileName,
-        outputOpt,   inputFileName, passwordOpt, password
-    };
+    const char *inputEqualsOutputOptionCommand[] = {programName, commandOpt,    commandDecrypt, inputOpt, inputFileName,
+                                                    outputOpt,   inputFileName, passwordOpt,    password};
     EXPECT_THROW(ProgramOptions programOptions(9, inputEqualsOutputOptionCommand), std::runtime_error);
 }
 
 // Check Parsed Arguments all options with ENCRYPT command
 TEST(ProgramOptions, CheckAllOptionsWithEncryptCommand) {
     const char *allOutputOption[] = {programName, commandOpt,     commandEncrypt, inputOpt, inputFileName,
-                                        outputOpt,   outputFileName, passwordOpt,    password};
+                                     outputOpt,   outputFileName, passwordOpt,    password};
     ProgramOptions programOptions(9, allOutputOption);
 
     EXPECT_EQ(programOptions.GetInputFile(), inputFileName);
@@ -193,10 +162,10 @@ TEST(ProgramOptions, CheckAllOptionsWithEncryptCommand) {
 
 // Check Parsed Arguments all options with DECRYPT command
 TEST(ProgramOptions, CheckDecryptCommandParsing) {
-        const char *allOutputOptionCommand[] = {programName, commandOpt,     commandDecrypt, inputOpt, inputFileName,
-                                                outputOpt,   outputFileName, passwordOpt,    password};
-        ProgramOptions programOptions(9, allOutputOptionCommand);
-        EXPECT_EQ(programOptions.GetCommand(), Command::DECRYPT);
+    const char *allOutputOptionCommand[] = {programName, commandOpt,     commandDecrypt, inputOpt, inputFileName,
+                                            outputOpt,   outputFileName, passwordOpt,    password};
+    ProgramOptions programOptions(9, allOutputOptionCommand);
+    EXPECT_EQ(programOptions.GetCommand(), Command::DECRYPT);
 }
 
 // Check Parsed Arguments all options with CHECKSUM command
@@ -210,7 +179,7 @@ TEST(ProgramOptions, CheckChecksumCommandParsing) {
 // Check Parsed Arguments with CHECKSUM command (only required fields)
 TEST(ProgramOptions, CheckChecksumCommandRequiredFieldsParsing) {
     const char *requiredOutputOptionCommand[] = {programName, commandOpt, commandChecksum, inputOpt, inputFileName};
-                                            
+
     EXPECT_NO_THROW(ProgramOptions programOptions(5, requiredOutputOptionCommand));
     ProgramOptions programOptions(5, requiredOutputOptionCommand);
     EXPECT_EQ(programOptions.GetCommand(), Command::CHECKSUM);
@@ -219,7 +188,7 @@ TEST(ProgramOptions, CheckChecksumCommandRequiredFieldsParsing) {
 // Check Parsed Arguments default output path when output option is not provided
 TEST(ProgramOptions, CheckDefaultOutputPathWhenNoOutputOption) {
     const char *allOutputOption[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
-                                        inputFileName, passwordOpt, password};
+                                     inputFileName, passwordOpt, password};
     ProgramOptions programOptions(7, allOutputOption);
 
     EXPECT_EQ(programOptions.GetOutputFile(), defaultOutputFilePtah);
