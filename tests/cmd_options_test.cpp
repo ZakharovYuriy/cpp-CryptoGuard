@@ -26,71 +26,155 @@ const char *defaultOutputFilePtah = "./result.txt";
 using namespace ::CryptoGuard;
 using Command = CryptoGuard::ProgramOptions::COMMAND_TYPE;
 
-TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing) {
-    // no options passed at all → should throw due to missing required options
-    const char *noOptions[] = {programName};
+// Aliases for expected exception types (kept near the top for reuse)
+using parameterError = boost::program_options::invalid_command_line_syntax;
+using validationError = boost::program_options::validation_error;
+
+// --- Missing/Help cases ---
+
+TEST(ProgramOptions, ThrowsWhenNoOptionsProvided) {
+    // No options at all → should throw due to missing required options
+    const char* noOptions[] = {programName};
     EXPECT_ANY_THROW(ProgramOptions programOptions(1, noOptions));
+}
 
-    // Check that creating ProgramOptions with only the help option does not throw an exception
-    const char *onlyHelpOption[] = {programName, helpOpt};
+TEST(ProgramOptions, ThrowsHelpRequestedWhenOnlyHelpOption) {
+    // Only --help → should throw a dedicated HelpRequested exception
+    const char* onlyHelpOption[] = {programName, helpOpt};
     EXPECT_THROW(ProgramOptions programOptions(2, onlyHelpOption), HelpRequested);
+}
 
-    // all required options including output explicitly provided → should not throw
-    const char *allOutputOption[] = {programName, commandOpt,     commandEncrypt, inputOpt, inputFileName,
-                                     outputOpt,   outputFileName, passwordOpt,    password};
+// --- Happy paths ---
+
+TEST(ProgramOptions, NoThrow_AllRequiredOptionsWithExplicitOutput) {
+    // All required options including explicit output → should not throw
+    const char* allOutputOption[] = {
+        programName, commandOpt, commandEncrypt, inputOpt, inputFileName,
+        outputOpt, outputFileName, passwordOpt, password
+    };
     EXPECT_NO_THROW(ProgramOptions programOptions(9, allOutputOption));
+}
 
-    // output option omitted, should use default value → should not throw
-    const char *defaultOutputOption[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
-                                         inputFileName, passwordOpt, password};
+TEST(ProgramOptions, NoThrow_OutputOmittedUsesDefault) {
+    // Output option omitted → should use default value and not throw
+    const char* defaultOutputOption[] = {
+        programName, commandOpt, commandEncrypt, inputOpt,
+        inputFileName, passwordOpt, password
+    };
     EXPECT_NO_THROW(ProgramOptions programOptions(7, defaultOutputOption));
+}
 
-    // Aliases for expected exception types
-    using parrametrError = boost::program_options::invalid_command_line_syntax;
-    using validationError = boost::program_options::validation_error;
+// --- Output option edge cases ---
 
-    // check output Option (missing argument)
-    const char *noOutputOptionArgument[] = {programName,   commandOpt,  commandEncrypt, inputOpt,
-                                            inputFileName, passwordOpt, password,       outputOpt};
-    EXPECT_THROW(ProgramOptions programOptions(8, noOutputOptionArgument), parrametrError);
+TEST(ProgramOptions, ThrowsWhenOutputArgumentMissing) {
+    // Output flag present but its argument is missing
+    const char* noOutputOptionArgument[] = {
+        programName, commandOpt, commandEncrypt, inputOpt,
+        inputFileName, passwordOpt, password, outputOpt
+    };
+    EXPECT_THROW(ProgramOptions programOptions(8, noOutputOptionArgument), parameterError);
+}
 
-    // check input Option (missing option and argument) and (only missing argument)
-    const char *noInputOption[] = {programName, commandOpt, commandEncrypt, passwordOpt, password};
+// --- Input option edge cases ---
+
+TEST(ProgramOptions, ThrowsWhenInputOptionMissingEntirely) {
+    // Missing --input option and its argument
+    const char* noInputOption[] = {
+        programName, commandOpt, commandEncrypt, passwordOpt, password
+    };
     EXPECT_THROW(ProgramOptions programOptions(5, noInputOption), std::runtime_error);
-    const char *noInputOptionArgument[] = {programName, commandOpt, commandEncrypt, passwordOpt, password, inputOpt};
-    EXPECT_THROW(ProgramOptions programOptions(6, noInputOptionArgument), parrametrError);
+}
 
-    // check passsword Option (missing option and argument) and (only missing argument)
-    const char *noPassswordOption[] = {programName, commandOpt, commandEncrypt, inputOpt, inputFileName};
-    EXPECT_THROW(ProgramOptions programOptions(5, noPassswordOption), std::runtime_error);
-    const char *noPassswordOptionArgument[] = {programName, commandOpt,    commandEncrypt,
-                                               inputOpt,    inputFileName, passwordOpt};
-    EXPECT_THROW(ProgramOptions programOptions(6, noPassswordOptionArgument), parrametrError);
+TEST(ProgramOptions, ThrowsWhenInputArgumentMissing) {
+    // --input provided without an argument
+    const char* noInputOptionArgument[] = {
+        programName, commandOpt, commandEncrypt, passwordOpt, password, inputOpt
+    };
+    EXPECT_THROW(ProgramOptions programOptions(6, noInputOptionArgument), parameterError);
+}
 
-    // check command Option (missing option and argument) and (only missing argument)
-    const char *noCommandOption[] = {programName, inputOpt, inputFileName, passwordOpt, password};
+// --- Password option edge cases ---
+
+TEST(ProgramOptions, ThrowsWhenPasswordOptionMissingEntirely) {
+    // Missing --password option and its argument
+    const char* noPasswordOption[] = {
+        programName, commandOpt, commandEncrypt, inputOpt, inputFileName
+    };
+    EXPECT_THROW(ProgramOptions programOptions(5, noPasswordOption), std::runtime_error);
+}
+
+TEST(ProgramOptions, ThrowsWhenPasswordArgumentMissing) {
+    // --password provided without an argument
+    const char* noPasswordOptionArgument[] = {
+        programName, commandOpt, commandEncrypt,
+        inputOpt, inputFileName, passwordOpt
+    };
+    EXPECT_THROW(ProgramOptions programOptions(6, noPasswordOptionArgument), parameterError);
+}
+
+// --- Command option edge cases ---
+
+TEST(ProgramOptions, ThrowsWhenCommandOptionMissingEntirely) {
+    // Missing --command option and its argument
+    const char* noCommandOption[] = {
+        programName, inputOpt, inputFileName, passwordOpt, password
+    };
     EXPECT_THROW(ProgramOptions programOptions(5, noCommandOption), std::runtime_error);
-    const char *noCommandOptionArgument[] = {programName, inputOpt, inputFileName, passwordOpt, password, commandOpt};
-    EXPECT_THROW(ProgramOptions programOptions(6, noCommandOptionArgument), parrametrError);
+}
 
-    // check command arguments -> valid command arguments (encrypt, decrypt, checksum) → should not throw
-    const char *commandOptionArgumentEncrypt[] = {programName, inputOpt,   inputFileName, passwordOpt,
-                                                  password,    commandOpt, commandEncrypt};
-    EXPECT_NO_THROW(ProgramOptions programOptions(7, commandOptionArgumentEncrypt));
-    const char *commandOptionArgumentDecrypt[] = {programName, inputOpt,   inputFileName, passwordOpt,
-                                                  password,    commandOpt, commandDecrypt};
-    EXPECT_NO_THROW(ProgramOptions programOptions(7, commandOptionArgumentDecrypt));
-    const char *commandOptionArgumentChecksum[] = {programName, inputOpt,   inputFileName,  passwordOpt,
-                                                   password,    commandOpt, commandChecksum};
-    EXPECT_NO_THROW(ProgramOptions programOptions(7, commandOptionArgumentChecksum));
-    // check wrong command arguments -> invalid command value passed (not among encrypt/decrypt/checksum) → should throw
-    const char *wrongCommandOptionArgument[] = {programName, inputOpt,   inputFileName, passwordOpt,
-                                                password,    commandOpt, wrongCommand};
+TEST(ProgramOptions, ThrowsWhenCommandArgumentMissing) {
+    // --command provided without an argument
+    const char* noCommandOptionArgument[] = {
+        programName, inputOpt, inputFileName, passwordOpt, password, commandOpt
+    };
+    EXPECT_THROW(ProgramOptions programOptions(6, noCommandOptionArgument), parameterError);
+}
+
+// --- Valid command values ---
+
+TEST(ProgramOptions, NoThrow_CommandEncrypt) {
+    const char* args[] = {
+        programName, inputOpt, inputFileName, passwordOpt,
+        password, commandOpt, commandEncrypt
+    };
+    EXPECT_NO_THROW(ProgramOptions programOptions(7, args));
+}
+
+TEST(ProgramOptions, NoThrow_CommandDecrypt) {
+    const char* args[] = {
+        programName, inputOpt, inputFileName, passwordOpt,
+        password, commandOpt, commandDecrypt
+    };
+    EXPECT_NO_THROW(ProgramOptions programOptions(7, args));
+}
+
+TEST(ProgramOptions, NoThrow_CommandChecksum) {
+    const char* args[] = {
+        programName, inputOpt, inputFileName, passwordOpt,
+        password, commandOpt, commandChecksum
+    };
+    EXPECT_NO_THROW(ProgramOptions programOptions(7, args));
+}
+
+// --- Invalid command value ---
+
+TEST(ProgramOptions, ThrowsWhenCommandValueInvalid) {
+    // Command argument is not one of encrypt/decrypt/checksum
+    const char* wrongCommandOptionArgument[] = {
+        programName, inputOpt, inputFileName, passwordOpt,
+        password, commandOpt, wrongCommand
+    };
     EXPECT_THROW(ProgramOptions programOptions(7, wrongCommandOptionArgument), validationError);
+}
 
-    // Check Parsed Arguments input file == output file
-    const char *inputEqualsOutputOptionCommand[] = {programName, commandOpt,     commandDecrypt, inputOpt, inputFileName,
-                                            outputOpt,   inputFileName, passwordOpt,    password};
+// --- Semantic validation ---
+
+TEST(ProgramOptions, ThrowsWhenInputEqualsOutput) {
+    // Parsed arguments validation: input file must differ from output file
+    const char* inputEqualsOutputOptionCommand[] = {
+        programName, commandOpt, commandDecrypt, inputOpt, inputFileName,
+        outputOpt,   inputFileName, passwordOpt, password
+    };
     EXPECT_THROW(ProgramOptions programOptions(9, inputEqualsOutputOptionCommand), std::runtime_error);
 }
 
