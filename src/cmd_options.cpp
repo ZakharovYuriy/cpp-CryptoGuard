@@ -46,7 +46,10 @@ ProgramOptions::ProgramOptions(int argc, const char *const argv[]) : desc_("Allo
         throw std::runtime_error("Command is not specified"s);
     }
     if (!vm.contains("password"s)) {
-        throw std::runtime_error("Password is not specified"s);
+        if (command_ != COMMAND_TYPE::CHECKSUM) throw std::runtime_error("Password is not specified"s);
+    }
+    if (inputFile_ == outputFile_){
+        throw std::runtime_error("Input file must not be the same as output file"s);
     }
 }
 

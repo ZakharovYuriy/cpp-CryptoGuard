@@ -87,6 +87,11 @@ TEST(ProgramOptions, ThrowsIfRequiredFieldsMissing) {
     const char *wrongCommandOptionArgument[] = {programName, inputOpt,   inputFileName, passwordOpt,
                                                 password,    commandOpt, wrongCommand};
     EXPECT_THROW(ProgramOptions programOptions(7, wrongCommandOptionArgument), validationError);
+
+    // Check Parsed Arguments input file == output file
+    const char *inputEqualsOutputOptionCommand[] = {programName, commandOpt,     commandDecrypt, inputOpt, inputFileName,
+                                            outputOpt,   inputFileName, passwordOpt,    password};
+    EXPECT_THROW(ProgramOptions programOptions(9, inputEqualsOutputOptionCommand), std::runtime_error);
 }
 
 // Check Parsed Arguments all options with ENCRYPT command
@@ -101,7 +106,7 @@ TEST(ProgramOptions, CheckAllOptionsWithEncryptCommand) {
     EXPECT_EQ(programOptions.GetCommand(), Command::ENCRYPT);
 }
 
-// Check Parsed Arguments DECRYPT command parsing
+// Check Parsed Arguments all options with DECRYPT command
 TEST(ProgramOptions, CheckDecryptCommandParsing) {
         const char *allOutputOptionCommand[] = {programName, commandOpt,     commandDecrypt, inputOpt, inputFileName,
                                                 outputOpt,   outputFileName, passwordOpt,    password};
@@ -109,11 +114,20 @@ TEST(ProgramOptions, CheckDecryptCommandParsing) {
         EXPECT_EQ(programOptions.GetCommand(), Command::DECRYPT);
 }
 
-// Check Parsed Arguments CHECKSUM command parsing
+// Check Parsed Arguments all options with CHECKSUM command
 TEST(ProgramOptions, CheckChecksumCommandParsing) {
     const char *allOutputOptionCommand[] = {programName, commandOpt,     commandChecksum, inputOpt, inputFileName,
                                             outputOpt,   outputFileName, passwordOpt,     password};
     ProgramOptions programOptions(9, allOutputOptionCommand);
+    EXPECT_EQ(programOptions.GetCommand(), Command::CHECKSUM);
+}
+
+// Check Parsed Arguments with CHECKSUM command (only required fields)
+TEST(ProgramOptions, CheckChecksumCommandRequiredFieldsParsing) {
+    const char *requiredOutputOptionCommand[] = {programName, commandOpt, commandChecksum, inputOpt, inputFileName};
+                                            
+    EXPECT_NO_THROW(ProgramOptions programOptions(5, requiredOutputOptionCommand));
+    ProgramOptions programOptions(5, requiredOutputOptionCommand);
     EXPECT_EQ(programOptions.GetCommand(), Command::CHECKSUM);
 }
 
