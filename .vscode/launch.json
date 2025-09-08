@@ -10,6 +10,7 @@
             "name": "Launch Debug",
             "program": "${workspaceFolder}/build/CryptoGuard",
             "args": [
+                "-h",
                 "-i",
                 "input.txt",
                 "--command",
@@ -18,7 +19,16 @@
             "cwd": "${workspaceFolder}/build",
             "preLaunchTask": "GCC: Build Debug app",
             "initCommands": ["settings set target.disable-aslr false"]
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Launch Tests",
+            "program": "${workspaceFolder}/build/CryptoGuard_tests",
+            "args": [],
+            "cwd": "${workspaceFolder}/build",
+            "preLaunchTask": "GCC: Build Debug app",
+            "initCommands": ["settings set target.disable-aslr false"]
         }
-
     ]
 }
