@@ -9,6 +9,8 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+#include <boost/scope_exit.hpp>
+
 namespace CryptoGuard {
 
 struct AesCipherParams {
@@ -95,6 +97,12 @@ std::string CryptoGuardCtx::PImpl::CalculateChecksum(std::istream &inStream) {
     if (!inStream.good())
         throw std::runtime_error("Stream read error");
 
+    // ensure the digest context is reset on any exit
+    EVP_MD_CTX* mctx = md_ctx_.get();
+    BOOST_SCOPE_EXIT(mctx) {
+        EVP_MD_CTX_reset(mctx);
+    } BOOST_SCOPE_EXIT_END
+
     if (!EVP_DigestInit_ex(md_ctx_.get(), EVP_sha256(), nullptr))
         throw std::runtime_error("EVP_DigestInit_ex failed: " + getLastOpenSSLError());
 
@@ -147,6 +155,12 @@ AesCipherParams CryptoGuardCtx::PImpl::CreateChiperParamsFromPassword(std::strin
 
 void CryptoGuardCtx::PImpl::ApplyCryptoOperation(std::istream &inStream, std::ostream &outStream,
                                                  const AesCipherParams &params) {
+    // guard will call reset on any function exit
+    EVP_CIPHER_CTX* ctx = chiper_ctx_.get();
+    BOOST_SCOPE_EXIT(ctx) {
+        EVP_CIPHER_CTX_reset(ctx);
+    } BOOST_SCOPE_EXIT_END
+
     if (!EVP_CipherInit_ex(chiper_ctx_.get(), params.cipher, nullptr, params.key.data(), params.iv.data(),
                            static_cast<int>(params.encrypt))) {
         throw std::runtime_error{"Failed to inicialised: " + getLastOpenSSLError()};
